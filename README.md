@@ -1,4 +1,4 @@
-![Stablecoin demo](@stablecoin-gif.gif)
+![Stablecoin demo](https://raw.githubusercontent.com/fabriziogianni7/overcollateralized-euro-stablecoin/refs/heads/main/public/stablecoin-gif.gif)
 
 ## Overcollateralized EURO Stablecoin
 
