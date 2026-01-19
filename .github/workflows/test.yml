@@ -29,7 +29,7 @@ jobs:
 
       - name: Install Foundry dependencies
         run: |
-          forge install --no-commit foundry-rs/forge-std openzeppelin/openzeppelin-contracts smartcontractkit/chainlink-brownie-contracts
+          forge install foundry-rs/forge-std openzeppelin/openzeppelin-contracts smartcontractkit/chainlink-brownie-contracts
 
       - name: Run Forge build
         run: |
