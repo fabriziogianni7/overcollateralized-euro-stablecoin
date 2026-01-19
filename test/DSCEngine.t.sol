@@ -40,12 +40,7 @@ contract DSCEngineTest is Test, TestUtils {
 
     function testRevertsOnZeroAmount() public {
         emit log("Expect revert when depositing zero collateral");
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InvalidAmount.selector,
-                0
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InvalidAmount.selector, 0));
         engine.depositCollateralAndMintDSC(0, params.weth);
     }
 
@@ -55,24 +50,14 @@ contract DSCEngineTest is Test, TestUtils {
         invalid.approve(address(engine), 1 ether);
 
         emit log("Expect revert for unsupported collateral address");
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InvalidCollateral.selector,
-                address(invalid)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InvalidCollateral.selector, address(invalid)));
         engine.depositCollateralAndMintDSC(1 ether, address(invalid));
     }
 
     function testRevertsWhenNativeValueMismatch() public {
         uint256 amount = 1 ether;
         emit log("Expect revert when msg.value mismatches native collateral");
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InvalidAmount.selector,
-                amount
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InvalidAmount.selector, amount));
         engine.depositCollateralAndMintDSC{value: 0}(amount, address(0));
     }
 
@@ -84,22 +69,18 @@ contract DSCEngineTest is Test, TestUtils {
         engine.depositCollateralAndMintDSC(amount, params.weth);
 
         uint256 expectedMint = _expectedDscAmount(params.weth, amount);
-        
+
         // 1724,137931034482758620 DSC minted for 1 ETH deposited
         // 1 ETH price = 3000 USD
         // 1 EUR price = 1.16 USD
         // 1 ETH = 3000 USD / 1.16 USD = 2586.203448275862034482 EUR
-        // 1 DSC = 100/150 => 1 DSC = 0.6666666666666666666666 
+        // 1 DSC = 100/150 => 1 DSC = 0.6666666666666666666666
         // 2586.203448275862034482 * 0.6666666666666666666666 = 1724,137931034482758620 DSC
-        
+
         emit log_named_uint("Expected DSC minted", expectedMint);
         emit log_named_uint("Actual DSC balance", dsc.balanceOf(address(this)));
         assertEq(dsc.balanceOf(address(this)), expectedMint, "DSC minted");
-        assertEq(
-            ERC20Mock(params.weth).balanceOf(address(engine)),
-            amount,
-            "Collateral transferred"
-        );
+        assertEq(ERC20Mock(params.weth).balanceOf(address(engine)), amount, "Collateral transferred");
     }
 
     function testDepositCollateralDoesNotMintDSC() public {
@@ -109,23 +90,14 @@ contract DSCEngineTest is Test, TestUtils {
         engine.depositCollateral(params.weth, amount);
 
         assertEq(dsc.balanceOf(address(this)), 0, "No DSC minted");
-        assertEq(
-            ERC20Mock(params.weth).balanceOf(address(engine)),
-            amount,
-            "Collateral transferred"
-        );
+        assertEq(ERC20Mock(params.weth).balanceOf(address(engine)), amount, "Collateral transferred");
     }
 
     function testDepositCollateralRevertsWhenMsgValueProvided() public {
         uint256 amount = 1 ether;
         ERC20Mock(params.weth).approve(address(engine), amount);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InvalidAmount.selector,
-                amount
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InvalidAmount.selector, amount));
         engine.depositCollateral{value: amount}(params.weth, amount);
     }
 
@@ -148,25 +120,15 @@ contract DSCEngineTest is Test, TestUtils {
 
         uint256 expectedMint = _expectedDscAmount(params.wbtc, amount);
         assertEq(dsc.balanceOf(address(this)), expectedMint, "DSC minted");
-        assertEq(
-            ERC20Mock(params.wbtc).balanceOf(address(engine)),
-            amount,
-            "Collateral transferred"
-        );
+        assertEq(ERC20Mock(params.wbtc).balanceOf(address(engine)), amount, "Collateral transferred");
     }
 
-    function testFuzzDepositCollateralAndMintMatchesExpected(
-        uint256 amount,
-        uint8 collateralSelector
-    ) public {
+    function testFuzzDepositCollateralAndMintMatchesExpected(uint256 amount, uint8 collateralSelector) public {
         address collateral = _collateralFromSelector(collateralSelector);
         uint256 depositAmount = _prepareCollateral(collateral, amount);
 
         if (collateral == address(0)) {
-            engine.depositCollateralAndMintDSC{value: depositAmount}(
-                depositAmount,
-                collateral
-            );
+            engine.depositCollateralAndMintDSC{value: depositAmount}(depositAmount, collateral);
         } else {
             engine.depositCollateralAndMintDSC(depositAmount, collateral);
         }
@@ -175,19 +137,14 @@ contract DSCEngineTest is Test, TestUtils {
         assertEq(dsc.balanceOf(address(this)), expectedMint);
     }
 
-    function testFuzzMintDSCWithinLimit(
-        uint256 collateralAmount,
-        uint256 mintAmount,
-        uint8 collateralSelector
-    ) public {
+    function testFuzzMintDSCWithinLimit(uint256 collateralAmount, uint256 mintAmount, uint8 collateralSelector)
+        public
+    {
         address collateral = _collateralFromSelector(collateralSelector);
         uint256 depositAmount = _prepareCollateral(collateral, collateralAmount);
 
         if (collateral == address(0)) {
-            engine.depositCollateral{value: depositAmount}(
-                collateral,
-                depositAmount
-            );
+            engine.depositCollateral{value: depositAmount}(collateral, depositAmount);
         } else {
             engine.depositCollateral(collateral, depositAmount);
         }
@@ -211,10 +168,7 @@ contract DSCEngineTest is Test, TestUtils {
         uint256 depositAmount = _prepareCollateral(collateral, collateralAmount);
 
         if (collateral == address(0)) {
-            engine.depositCollateralAndMintDSC{value: depositAmount}(
-                depositAmount,
-                collateral
-            );
+            engine.depositCollateralAndMintDSC{value: depositAmount}(depositAmount, collateral);
         } else {
             engine.depositCollateralAndMintDSC(depositAmount, collateral);
         }
@@ -240,14 +194,8 @@ contract DSCEngineTest is Test, TestUtils {
             assertEq(address(engine).balance, engineBalanceBefore - expectedOut);
             assertEq(address(this).balance, userBalanceBefore + expectedOut);
         } else {
-            assertEq(
-                ERC20Mock(collateral).balanceOf(address(engine)),
-                engineBalanceBefore - expectedOut
-            );
-            assertEq(
-                ERC20Mock(collateral).balanceOf(address(this)),
-                userBalanceBefore + expectedOut
-            );
+            assertEq(ERC20Mock(collateral).balanceOf(address(engine)), engineBalanceBefore - expectedOut);
+            assertEq(ERC20Mock(collateral).balanceOf(address(this)), userBalanceBefore + expectedOut);
         }
         assertEq(dsc.balanceOf(address(this)), minted - amountDsc);
     }
@@ -292,22 +240,12 @@ contract DSCEngineTest is Test, TestUtils {
     }
 
     function testRedeemCollateralRevertsOnZeroAmount() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InvalidAmount.selector,
-                0
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InvalidAmount.selector, 0));
         engine.redeemCollateral(params.weth, 0);
     }
 
     function testRedeemCollateralRevertsOnInvalidCollateral() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InvalidCollateral.selector,
-                address(123)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InvalidCollateral.selector, address(123)));
         engine.redeemCollateral(address(123), 1);
     }
 
@@ -345,34 +283,17 @@ contract DSCEngineTest is Test, TestUtils {
         ERC20Mock(params.weth).approve(address(engine), amount);
         engine.depositCollateral(params.weth, amount);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InsufficientBalance.selector,
-                0,
-                minted
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InsufficientBalance.selector, 0, minted));
         engine.redeemCollateralForDSC(minted, params.weth);
     }
 
     function testRedeemCollateralForDSCRevertsOnZeroAmount() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InvalidAmount.selector,
-                0
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InvalidAmount.selector, 0));
         engine.redeemCollateralForDSC(0, params.weth);
     }
 
     function testRedeemCollateralForDSCRevertsOnInsufficientBalance() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InsufficientBalance.selector,
-                0,
-                1
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InsufficientBalance.selector, 0, 1));
         engine.redeemCollateralForDSC(1, params.weth);
     }
 
@@ -384,12 +305,7 @@ contract DSCEngineTest is Test, TestUtils {
         uint256 minted = dsc.balanceOf(address(this));
         dsc.approve(address(engine), minted);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InvalidCollateral.selector,
-                address(123)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InvalidCollateral.selector, address(123)));
         engine.redeemCollateralForDSC(minted, address(123));
     }
 
@@ -403,33 +319,17 @@ contract DSCEngineTest is Test, TestUtils {
 
         MockV3Aggregator(params.eurUsdPriceFeed).updateAnswer(1);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__RedeemAmountTooSmall.selector,
-                1
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__RedeemAmountTooSmall.selector, 1));
         engine.redeemCollateralForDSC(1, params.weth);
     }
 
     function testBurnDSCRevertsOnZeroAmount() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InvalidAmount.selector,
-                0
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InvalidAmount.selector, 0));
         engine.burnDSC(0);
     }
 
     function testBurnDSCRevertsOnInsufficientBalance() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InsufficientBalance.selector,
-                0,
-                1
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InsufficientBalance.selector, 0, 1));
         engine.burnDSC(1);
     }
 
@@ -446,23 +346,12 @@ contract DSCEngineTest is Test, TestUtils {
         dsc.transfer(address(this), minted);
         vm.stopPrank();
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InsufficientBalance.selector,
-                0,
-                minted
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InsufficientBalance.selector, 0, minted));
         engine.burnDSC(minted);
     }
 
     function testMintDSCRevertsOnZeroAmount() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InvalidAmount.selector,
-                0
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InvalidAmount.selector, 0));
         engine.mintDSC(0);
     }
 
@@ -474,11 +363,7 @@ contract DSCEngineTest is Test, TestUtils {
         uint256 maxMintable = _expectedDscAmount(params.weth, amount);
 
         vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InsufficientCollateral.selector,
-                maxMintable,
-                maxMintable + 1
-            )
+            abi.encodeWithSelector(DSCEngine.DSCEngine__InsufficientCollateral.selector, maxMintable, maxMintable + 1)
         );
         engine.mintDSC(maxMintable + 1);
     }
@@ -543,9 +428,7 @@ contract DSCEngineTest is Test, TestUtils {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                DSCEngine.DSCEngine__NotLiquidatable.selector,
-                address(this),
-                engine.getHealthFactor(address(this))
+                DSCEngine.DSCEngine__NotLiquidatable.selector, address(this), engine.getHealthFactor(address(this))
             )
         );
         engine.liquidate(address(this), 1, params.weth);
@@ -567,11 +450,7 @@ contract DSCEngineTest is Test, TestUtils {
         uint256 debtToCover = borrowerDebt + 1;
 
         vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InsufficientBalance.selector,
-                borrowerDebt,
-                debtToCover
-            )
+            abi.encodeWithSelector(DSCEngine.DSCEngine__InsufficientBalance.selector, borrowerDebt, debtToCover)
         );
         engine.liquidate(borrower, debtToCover, params.weth);
     }
@@ -590,13 +469,7 @@ contract DSCEngineTest is Test, TestUtils {
 
         uint256 borrowerDebt = dsc.balanceOf(borrower);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InsufficientBalance.selector,
-                0,
-                borrowerDebt
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InsufficientBalance.selector, 0, borrowerDebt));
         engine.liquidate(borrower, borrowerDebt, params.weth);
     }
 
@@ -618,12 +491,7 @@ contract DSCEngineTest is Test, TestUtils {
         uint256 borrowerDebt = dsc.balanceOf(borrower);
         address invalidCollateral = address(123);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InvalidCollateral.selector,
-                invalidCollateral
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InvalidCollateral.selector, invalidCollateral));
         engine.liquidate(borrower, borrowerDebt, invalidCollateral);
     }
 
@@ -653,10 +521,7 @@ contract DSCEngineTest is Test, TestUtils {
 
         uint256 debtToCover = (dsc.balanceOf(borrower) * 75) / 100 + 1;
 
-        emit log_named_uint(
-            "Borrower health factor before liquidation",
-            engine.getHealthFactor(borrower)
-        );
+        emit log_named_uint("Borrower health factor before liquidation", engine.getHealthFactor(borrower));
         assertLt(engine.getHealthFactor(borrower), PRECISION);
 
         uint256 engineBalanceBefore = weth.balanceOf(address(engine));
@@ -674,19 +539,13 @@ contract DSCEngineTest is Test, TestUtils {
         emit log_named_uint("Engine WETH after", engineBalanceAfter);
         emit log_named_uint("Liquidator WETH before", liquidatorBalanceBefore);
         emit log_named_uint("Liquidator WETH after", liquidatorBalanceAfter);
-        emit log_named_uint(
-            "Borrower health factor after liquidation",
-            engine.getHealthFactor(borrower)
-        );
+        emit log_named_uint("Borrower health factor after liquidation", engine.getHealthFactor(borrower));
 
         assertGt(liquidatorBalanceAfter, liquidatorBalanceBefore);
         assertLt(engineBalanceAfter, engineBalanceBefore);
     }
 
-    function _expectedDscAmount(
-        address collateral,
-        uint256 amountCollateral
-    ) internal view returns (uint256) {
+    function _expectedDscAmount(address collateral, uint256 amountCollateral) internal view returns (uint256) {
         uint256 eurPriceUSD = _latestAnswer(params.eurUsdPriceFeed);
 
         uint256 collateralPriceUSD;
@@ -698,19 +557,14 @@ contract DSCEngineTest is Test, TestUtils {
             revert("unsupported collateral in test helper");
         }
 
-        uint256 collateralPriceEUR = (collateralPriceUSD * PRECISION) /
-            eurPriceUSD;
+        uint256 collateralPriceEUR = (collateralPriceUSD * PRECISION) / eurPriceUSD;
 
-        uint256 collateralPriceEURAmount = (collateralPriceEUR *
-            amountCollateral) / PRECISION;
+        uint256 collateralPriceEURAmount = (collateralPriceEUR * amountCollateral) / PRECISION;
 
         return (collateralPriceEURAmount * 100) / HEALTH_THRESHOLD;
     }
 
-    function _expectedCollateralOut(
-        uint256 amountDsc,
-        address collateral
-    ) internal view returns (uint256) {
+    function _expectedCollateralOut(uint256 amountDsc, address collateral) internal view returns (uint256) {
         uint256 eurPriceUsd = _latestAnswer(params.eurUsdPriceFeed);
         uint256 collateralPriceUsd;
         uint8 collateralDecimals;
@@ -725,18 +579,13 @@ contract DSCEngineTest is Test, TestUtils {
         }
 
         uint256 collateralToRedeemEur = (amountDsc * HEALTH_THRESHOLD) / 100;
-        uint256 collateralToRedeemUsd = (collateralToRedeemEur * eurPriceUsd) /
-            PRECISION;
+        uint256 collateralToRedeemUsd = (collateralToRedeemEur * eurPriceUsd) / PRECISION;
         uint256 numerator = collateralToRedeemUsd * PRECISION;
-        uint256 tokenOutWad = (numerator + collateralPriceUsd - 1) /
-            collateralPriceUsd;
+        uint256 tokenOutWad = (numerator + collateralPriceUsd - 1) / collateralPriceUsd;
         return _scaleFromWad(tokenOutWad, collateralDecimals);
     }
 
-    function _prepareCollateral(
-        address collateral,
-        uint256 amount
-    ) internal returns (uint256) {
+    function _prepareCollateral(address collateral, uint256 amount) internal returns (uint256) {
         uint256 depositAmount;
         if (collateral == address(0)) {
             depositAmount = bound(amount, 1, 1000 ether);
@@ -750,9 +599,7 @@ contract DSCEngineTest is Test, TestUtils {
         return depositAmount;
     }
 
-    function _collateralFromSelector(
-        uint8 selector
-    ) internal view returns (address) {
+    function _collateralFromSelector(uint8 selector) internal view returns (address) {
         return _collateralFromSelector(selector, params.weth, params.wbtc);
     }
 

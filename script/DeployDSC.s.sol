@@ -17,10 +17,7 @@ contract DeployDSC is Script {
     /**
      * @notice Deploys using network-specific config (local, Sepolia, mainnet).
      */
-    function run()
-        external
-        returns (DecentralizedStablecoin dsc, DSCEngine engine)
-    {
+    function run() external returns (DecentralizedStablecoin dsc, DSCEngine engine) {
         Config config = new Config();
         Config.NetworkConfig memory params = config.getActiveConfig();
         vm.startBroadcast();
@@ -29,20 +26,18 @@ contract DeployDSC is Script {
     }
 
     /// @notice Helper for tests to deploy with in-memory parameters.
-    function deployWithParams(
-        Config.NetworkConfig memory params
-    ) public returns (DecentralizedStablecoin dsc, DSCEngine engine) {
+    function deployWithParams(Config.NetworkConfig memory params)
+        public
+        returns (DecentralizedStablecoin dsc, DSCEngine engine)
+    {
         return _deploy(params);
     }
 
-    function _deploy(
-        Config.NetworkConfig memory params
-    ) internal returns (DecentralizedStablecoin dsc, DSCEngine engine) {
-        dsc = new DecentralizedStablecoin(
-            params.name,
-            params.symbol,
-            params.decimals
-        );
+    function _deploy(Config.NetworkConfig memory params)
+        internal
+        returns (DecentralizedStablecoin dsc, DSCEngine engine)
+    {
+        dsc = new DecentralizedStablecoin(params.name, params.symbol, params.decimals);
 
         engine = new DSCEngine(
             params.ethUsdPriceFeed,

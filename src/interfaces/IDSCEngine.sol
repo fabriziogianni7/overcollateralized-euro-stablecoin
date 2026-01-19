@@ -10,34 +10,22 @@ interface IDSCEngine {
     /// @notice Deposits collateral and mints DSC against it.
     /// @param _amountCollateral Amount of collateral to deposit.
     /// @param _collateral Collateral token address (zero for native ETH).
-    function depositCollateralAndMintDSC(
-        uint256 _amountCollateral,
-        address _collateral
-    ) external payable;
+    function depositCollateralAndMintDSC(uint256 _amountCollateral, address _collateral) external payable;
 
     /// @notice Deposits collateral without minting DSC.
     /// @param _collateral Collateral token address (zero for native ETH).
     /// @param _amountCollateral Amount of collateral to deposit.
-    function depositCollateral(
-        address _collateral,
-        uint256 _amountCollateral
-    ) external payable;
+    function depositCollateral(address _collateral, uint256 _amountCollateral) external payable;
 
     /// @notice Burns DSC and redeems the corresponding collateral.
     /// @param _amountDSC Amount of DSC to burn.
     /// @param _collateral Collateral token address (zero for native ETH).
-    function redeemCollateralForDSC(
-        uint256 _amountDSC,
-        address _collateral
-    ) external;
+    function redeemCollateralForDSC(uint256 _amountDSC, address _collateral) external;
 
     /// @notice Redeems collateral without burning DSC.
     /// @param _collateral Collateral token address (zero for native ETH).
     /// @param _amountCollateral Amount of collateral to redeem.
-    function redeemCollateral(
-        address _collateral,
-        uint256 _amountCollateral
-    ) external;
+    function redeemCollateral(address _collateral, uint256 _amountCollateral) external;
 
     /// @notice Burns DSC held by the caller and reduces their debt.
     /// @param _amountDSC Amount of DSC to burn.
@@ -51,11 +39,7 @@ interface IDSCEngine {
     /// @param _borrower Address of the borrower to liquidate.
     /// @param _debtToCover Amount of DSC to cover.
     /// @param _collateral Collateral token address (zero for native ETH).
-    function liquidate(
-        address _borrower,
-        uint256 _debtToCover,
-        address _collateral
-    ) external;
+    function liquidate(address _borrower, uint256 _debtToCover, address _collateral) external;
 
     /// @notice Returns the health factor for a user.
     /// @param _user Address of the user.

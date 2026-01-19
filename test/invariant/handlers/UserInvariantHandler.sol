@@ -36,6 +36,7 @@ contract UserInvariantHandler is Test, TestUtils {
     uint256 internal constant LIQUIDATION_BONUS_PRECISION = 100;
 
     receive() external payable {}
+
     constructor() {
         // I want to:
         // init contracts;
@@ -67,10 +68,7 @@ contract UserInvariantHandler is Test, TestUtils {
 
         if (collateral == address(0)) {
             vm.deal(address(this), _amount);
-            engine.depositCollateralAndMintDSC{value: _amount}(
-                _amount,
-                collateral
-            );
+            engine.depositCollateralAndMintDSC{value: _amount}(_amount, collateral);
             totalCollateralEth += _amount;
         } else {
             ERC20Mock(collateral).mint(address(this), _amount);
@@ -87,7 +85,7 @@ contract UserInvariantHandler is Test, TestUtils {
 
     function depositWithoutMint(uint256 _amount, uint8 _collateralSeed) public {
         _amount = bound(_amount, 1, type(uint128).max);
-        address collateral =_collateralFromSelector(_collateralSeed, params.weth, params.wbtc);
+        address collateral = _collateralFromSelector(_collateralSeed, params.weth, params.wbtc);
 
         if (collateral == address(0)) {
             vm.deal(address(this), _amount);
@@ -105,53 +103,32 @@ contract UserInvariantHandler is Test, TestUtils {
         }
     }
 
-    function redeemAndBurnCollateral(
-        uint256 _amount,
-        uint8 _collateralSeed
-    ) public {
+    function redeemAndBurnCollateral(uint256 _amount, uint8 _collateralSeed) public {
         address collateral = _collateralFromSelector(_collateralSeed, params.weth, params.wbtc);
 
-        DSCEngine.UserCollateral memory uc = engine.getCollateralForUser(
-            address(this)
-        );
-        uint256 balanceForCollateral = collateral == params.weth
-            ? uc.amountWETH
-            : collateral == params.wbtc
-            ? uc.amountWBTC
-            : uc.amountETH;
+        DSCEngine.UserCollateral memory uc = engine.getCollateralForUser(address(this));
+        uint256 balanceForCollateral =
+            collateral == params.weth ? uc.amountWETH : collateral == params.wbtc ? uc.amountWBTC : uc.amountETH;
 
         if (balanceForCollateral == 0) return;
 
         uint256 dscBalance = dsc.balanceOf(address(this));
         if (dscBalance == 0) return;
 
-        uint256 maxDscFromCollateral = _maxDscFromCollateral(
-            collateral,
-            balanceForCollateral
-        );
+        uint256 maxDscFromCollateral = _maxDscFromCollateral(collateral, balanceForCollateral);
         if (maxDscFromCollateral == 0) return;
 
-        uint256 maxBurn = dscBalance < maxDscFromCollateral
-            ? dscBalance
-            : maxDscFromCollateral;
+        uint256 maxBurn = dscBalance < maxDscFromCollateral ? dscBalance : maxDscFromCollateral;
 
         if (maxBurn <= 1e18) return;
         _amount = bound(_amount, 1e18, maxBurn);
 
         uint256 eurPriceUsd = _latestAnswer(params.eurUsdPriceFeed);
-        uint256 collateralPriceUsd = _latestAnswer(
-            collateral == params.wbtc
-                ? params.btcUsdPriceFeed
-                : params.ethUsdPriceFeed
-        );
+        uint256 collateralPriceUsd =
+            _latestAnswer(collateral == params.wbtc ? params.btcUsdPriceFeed : params.ethUsdPriceFeed);
         uint8 collateralDecimals = _getCollateralDecimals(collateral);
         uint256 tokenOut = DSCEngineMath.calculateCollateralOut(
-            _amount,
-            eurPriceUsd,
-            collateralPriceUsd,
-            collateralDecimals,
-            PRECISION,
-            HEALTH_THRESHOLD
+            _amount, eurPriceUsd, collateralPriceUsd, collateralDecimals, PRECISION, HEALTH_THRESHOLD
         );
         if (tokenOut > balanceForCollateral) return;
 
@@ -168,20 +145,11 @@ contract UserInvariantHandler is Test, TestUtils {
     }
 
     function burnCollateral(uint256 _amount, uint8 _collateralSeed) public {
-        address collateral = _collateralFromSelector(
-            _collateralSeed,
-            params.weth,
-            params.wbtc
-        );
+        address collateral = _collateralFromSelector(_collateralSeed, params.weth, params.wbtc);
 
-        DSCEngine.UserCollateral memory uc = engine.getCollateralForUser(
-            address(this)
-        );
-        uint256 balanceForCollateral = collateral == params.weth
-            ? uc.amountWETH
-            : collateral == params.wbtc
-            ? uc.amountWBTC
-            : uc.amountETH;
+        DSCEngine.UserCollateral memory uc = engine.getCollateralForUser(address(this));
+        uint256 balanceForCollateral =
+            collateral == params.weth ? uc.amountWETH : collateral == params.wbtc ? uc.amountWBTC : uc.amountETH;
 
         if (balanceForCollateral == 0) return;
 
@@ -203,27 +171,14 @@ contract UserInvariantHandler is Test, TestUtils {
         //todo implement
     }
 
-    function _maxDscFromCollateral(
-        address collateral,
-        uint256 amountCollateral
-    ) internal view returns (uint256) {
+    function _maxDscFromCollateral(address collateral, uint256 amountCollateral) internal view returns (uint256) {
         uint256 eurPriceUsd = _latestAnswer(params.eurUsdPriceFeed);
-        uint256 collateralPriceUsd = _latestAnswer(
-            collateral == params.wbtc
-                ? params.btcUsdPriceFeed
-                : params.ethUsdPriceFeed 
-        );
+        uint256 collateralPriceUsd =
+            _latestAnswer(collateral == params.wbtc ? params.btcUsdPriceFeed : params.ethUsdPriceFeed);
         uint8 collateralDecimals = _getCollateralDecimals(collateral);
 
-        return
-            DSCEngineMath.computeDscAmountFromCollateral(
-                amountCollateral,
-                eurPriceUsd,
-                collateralPriceUsd,
-                collateralDecimals,
-                PRECISION,
-                HEALTH_THRESHOLD
-            );
+        return DSCEngineMath.computeDscAmountFromCollateral(
+            amountCollateral, eurPriceUsd, collateralPriceUsd, collateralDecimals, PRECISION, HEALTH_THRESHOLD
+        );
     }
-
 }

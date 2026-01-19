@@ -17,7 +17,6 @@ import {IDSCEngine} from "./interfaces/IDSCEngine.sol";
  * @notice Core engine for the DSC system backed by WETH and WBTC.
  * @dev Maintains the EUR 1 peg by keeping the system overcollateralized.
  */
-
 contract DSCEngine is IDSCEngine, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -51,17 +50,11 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
     error DSCEngine__TransferFailed();
     error DSCEngine__NotImplemented();
     error DSCEngine__RedeemAmountTooSmall(uint256 amount);
-    error DSCEngine__InsufficientCollateral(
-        uint256 maxMintable,
-        uint256 requested
-    );
+    error DSCEngine__InsufficientCollateral(uint256 maxMintable, uint256 requested);
     error DSCEngine__HealthFactorTooLow(uint256 healthFactor);
     error DSCEngine__NotLiquidatable(address borrower, uint256 healthFactor);
 
-    modifier _validateCollateral(
-        address _collateral,
-        uint256 _amountCollateral
-    ) {
+    modifier _validateCollateral(address _collateral, uint256 _amountCollateral) {
         if (_collateral == address(0)) {
             if (msg.value != _amountCollateral || _amountCollateral == 0) {
                 revert DSCEngine__InvalidAmount(_amountCollateral);
@@ -82,28 +75,19 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
         _;
     }
 
-    modifier _validateRedeemCollateralAndAmount(
-        uint256 _amountDSC,
-        address _collateral
-    ) {
+    modifier _validateRedeemCollateralAndAmount(uint256 _amountDSC, address _collateral) {
         if (_amountDSC <= 0) {
             revert DSCEngine__InvalidAmount(_amountDSC);
         }
         if (i_dsc.balanceOf(msg.sender) < _amountDSC) {
-            revert DSCEngine__InsufficientBalance(
-                i_dsc.balanceOf(msg.sender),
-                _amountDSC
-            );
+            revert DSCEngine__InsufficientBalance(i_dsc.balanceOf(msg.sender), _amountDSC);
         }
         _requireValidCollateral(_collateral);
 
         _;
     }
 
-    modifier _validateRedeemCollateral(
-        address _collateral,
-        uint256 _amountCollateral
-    ) {
+    modifier _validateRedeemCollateral(address _collateral, uint256 _amountCollateral) {
         if (_amountCollateral <= 0) {
             revert DSCEngine__InvalidAmount(_amountCollateral);
         }
@@ -130,10 +114,7 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
     }
 
     /// @inheritdoc IDSCEngine
-    function depositCollateralAndMintDSC(
-        uint256 _amountCollateral,
-        address _collateral
-    )
+    function depositCollateralAndMintDSC(uint256 _amountCollateral, address _collateral)
         external
         payable
         override
@@ -144,12 +125,7 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
         uint256 collateralPriceUsd = getCollateralPriceUSD(_collateral);
         uint8 collateralDecimals = _getCollateralDecimals(_collateral);
         uint256 dscAmount = DSCEngineMath.computeDscAmountFromCollateral(
-            _amountCollateral,
-            eurPriceUsd,
-            collateralPriceUsd,
-            collateralDecimals,
-            PRECISION,
-            HEALTH_THRESHOLD
+            _amountCollateral, eurPriceUsd, collateralPriceUsd, collateralDecimals, PRECISION, HEALTH_THRESHOLD
         );
 
         _depositCollateral(_collateral, _amountCollateral);
@@ -159,10 +135,7 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
     }
 
     /// @inheritdoc IDSCEngine
-    function depositCollateral(
-        address _collateral,
-        uint256 _amountCollateral
-    )
+    function depositCollateral(address _collateral, uint256 _amountCollateral)
         external
         payable
         override
@@ -173,10 +146,7 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
     }
 
     /// @inheritdoc IDSCEngine
-    function redeemCollateralForDSC(
-        uint256 _amountDSC,
-        address _collateral
-    )
+    function redeemCollateralForDSC(uint256 _amountDSC, address _collateral)
         external
         override
         nonReentrant
@@ -186,12 +156,7 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
         uint256 collateralPriceUsd = getCollateralPriceUSD(_collateral);
         uint8 collateralDecimals = _getCollateralDecimals(_collateral);
         uint256 tokenOut = DSCEngineMath.calculateCollateralOut(
-            _amountDSC,
-            eurPriceUsd,
-            collateralPriceUsd,
-            collateralDecimals,
-            PRECISION,
-            HEALTH_THRESHOLD
+            _amountDSC, eurPriceUsd, collateralPriceUsd, collateralDecimals, PRECISION, HEALTH_THRESHOLD
         );
         if (tokenOut == 0) {
             revert DSCEngine__RedeemAmountTooSmall(_amountDSC);
@@ -201,10 +166,7 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
     }
 
     /// @inheritdoc IDSCEngine
-    function redeemCollateral(
-        address _collateral,
-        uint256 _amountCollateral
-    )
+    function redeemCollateral(address _collateral, uint256 _amountCollateral)
         external
         override
         nonReentrant
@@ -235,12 +197,8 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
             revert DSCEngine__InsufficientCollateral(maxMintable, requested);
         }
         uint256 collateralValueEur = _getAccountCollateralValueEur(msg.sender);
-        uint256 healthFactor = DSCEngineMath.calculateHealthFactor(
-            collateralValueEur,
-            requested,
-            PRECISION,
-            HEALTH_THRESHOLD
-        );
+        uint256 healthFactor =
+            DSCEngineMath.calculateHealthFactor(collateralValueEur, requested, PRECISION, HEALTH_THRESHOLD);
         if (healthFactor < PRECISION) {
             revert DSCEngine__HealthFactorTooLow(healthFactor);
         }
@@ -249,11 +207,7 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
     }
 
     /// @inheritdoc IDSCEngine
-    function liquidate(
-        address _borrower,
-        uint256 _debtToCover,
-        address _collateral
-    ) external override nonReentrant {
+    function liquidate(address _borrower, uint256 _debtToCover, address _collateral) external override nonReentrant {
         if (_debtToCover <= 0) {
             revert DSCEngine__InvalidAmount(_debtToCover);
         }
@@ -290,9 +244,7 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
     }
 
     /// @inheritdoc IDSCEngine
-    function getHealthFactor(
-        address _user
-    ) external view override returns (uint256) {
+    function getHealthFactor(address _user) external view override returns (uint256) {
         return _healthFactor(_user);
     }
 
@@ -300,19 +252,11 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
     function _healthFactor(address _user) internal view returns (uint256) {
         uint256 collateralValueEur = _getAccountCollateralValueEur(_user);
         uint256 totalDsc = s_userDebt[_user];
-        return
-            DSCEngineMath.calculateHealthFactor(
-                collateralValueEur,
-                totalDsc,
-                PRECISION,
-                HEALTH_THRESHOLD
-            );
+        return DSCEngineMath.calculateHealthFactor(collateralValueEur, totalDsc, PRECISION, HEALTH_THRESHOLD);
     }
 
     /// @notice Returns the maximum DSC a user can mint.
-    function _getUserMintableDSC(
-        address _user
-    ) internal view returns (uint256) {
+    function _getUserMintableDSC(address _user) internal view returns (uint256) {
         uint256 eurPriceUsd = getChainlinkDataFeedLatestAnswer(EURUSDDataFeed);
         UserCollateral storage userCollateral = s_userCollateral[_user];
         uint256 totalMintable;
@@ -321,12 +265,7 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
             uint256 collateralPriceUsd = getCollateralPriceUSD(WETH);
             uint8 decimals = _getCollateralDecimals(WETH);
             totalMintable += DSCEngineMath.computeDscAmountFromCollateral(
-                userCollateral.amountWETH,
-                eurPriceUsd,
-                collateralPriceUsd,
-                decimals,
-                PRECISION,
-                HEALTH_THRESHOLD
+                userCollateral.amountWETH, eurPriceUsd, collateralPriceUsd, decimals, PRECISION, HEALTH_THRESHOLD
             );
         }
 
@@ -334,12 +273,7 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
             uint256 collateralPriceUsd = getCollateralPriceUSD(address(0));
             uint8 decimals = _getCollateralDecimals(address(0));
             totalMintable += DSCEngineMath.computeDscAmountFromCollateral(
-                userCollateral.amountETH,
-                eurPriceUsd,
-                collateralPriceUsd,
-                decimals,
-                PRECISION,
-                HEALTH_THRESHOLD
+                userCollateral.amountETH, eurPriceUsd, collateralPriceUsd, decimals, PRECISION, HEALTH_THRESHOLD
             );
         }
 
@@ -347,12 +281,7 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
             uint256 collateralPriceUsd = getCollateralPriceUSD(WBTC);
             uint8 decimals = _getCollateralDecimals(WBTC);
             totalMintable += DSCEngineMath.computeDscAmountFromCollateral(
-                userCollateral.amountWBTC,
-                eurPriceUsd,
-                collateralPriceUsd,
-                decimals,
-                PRECISION,
-                HEALTH_THRESHOLD
+                userCollateral.amountWBTC, eurPriceUsd, collateralPriceUsd, decimals, PRECISION, HEALTH_THRESHOLD
             );
         }
 
@@ -360,9 +289,7 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
     }
 
     /// @notice Returns the EUR value of a user's collateral.
-    function _getAccountCollateralValueEur(
-        address _user
-    ) internal view returns (uint256) {
+    function _getAccountCollateralValueEur(address _user) internal view returns (uint256) {
         uint256 eurPriceUsd = getChainlinkDataFeedLatestAnswer(EURUSDDataFeed);
         UserCollateral storage userCollateral = s_userCollateral[_user];
         uint256 totalValueEur;
@@ -371,11 +298,7 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
             uint256 collateralPriceUsd = getCollateralPriceUSD(WETH);
             uint8 decimals = _getCollateralDecimals(WETH);
             totalValueEur += DSCEngineMath.collateralValueEur(
-                userCollateral.amountWETH,
-                collateralPriceUsd,
-                eurPriceUsd,
-                decimals,
-                PRECISION
+                userCollateral.amountWETH, collateralPriceUsd, eurPriceUsd, decimals, PRECISION
             );
         }
 
@@ -383,11 +306,7 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
             uint256 collateralPriceUsd = getCollateralPriceUSD(address(0));
             uint8 decimals = _getCollateralDecimals(address(0));
             totalValueEur += DSCEngineMath.collateralValueEur(
-                userCollateral.amountETH,
-                collateralPriceUsd,
-                eurPriceUsd,
-                decimals,
-                PRECISION
+                userCollateral.amountETH, collateralPriceUsd, eurPriceUsd, decimals, PRECISION
             );
         }
 
@@ -395,11 +314,7 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
             uint256 collateralPriceUsd = getCollateralPriceUSD(WBTC);
             uint8 decimals = _getCollateralDecimals(WBTC);
             totalValueEur += DSCEngineMath.collateralValueEur(
-                userCollateral.amountWBTC,
-                collateralPriceUsd,
-                eurPriceUsd,
-                decimals,
-                PRECISION
+                userCollateral.amountWBTC, collateralPriceUsd, eurPriceUsd, decimals, PRECISION
             );
         }
 
@@ -407,61 +322,36 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
     }
 
     /// @notice Redeems collateral for the caller and optionally burns DSC.
-    function _redeemCollateral(
-        uint256 _amountDSC,
-        address _collateral,
-        uint256 _tokenOut
-    ) internal {
+    function _redeemCollateral(uint256 _amountDSC, address _collateral, uint256 _tokenOut) internal {
         _updateCollateralBalance(msg.sender, _collateral, _tokenOut, false);
         _transferCollateral(msg.sender, _collateral, _tokenOut);
 
         if (_amountDSC > 0) {
             _burnDsc(msg.sender, msg.sender, _amountDSC);
         }
-
     }
 
     /// @notice Deposits collateral for the caller.
-    function _depositCollateral(
-        address _collateral,
-        uint256 _amountCollateral
-    ) internal {
+    function _depositCollateral(address _collateral, uint256 _amountCollateral) internal {
         if (_collateral != address(0)) {
-            IERC20(_collateral).safeTransferFrom(
-                msg.sender,
-                address(this),
-                _amountCollateral
-            );
+            IERC20(_collateral).safeTransferFrom(msg.sender, address(this), _amountCollateral);
         }
-        _updateCollateralBalance(
-            msg.sender,
-            _collateral,
-            _amountCollateral,
-            true
-        );
+        _updateCollateralBalance(msg.sender, _collateral, _amountCollateral, true);
     }
 
     /// @notice Gets the latest price answer normalized to 18 decimals.
-    function getChainlinkDataFeedLatestAnswer(
-        IAggregatorV3Interface _dataFeed
-    ) internal view returns (uint256) {
-        (, int256 answer, , , ) = _dataFeed.latestRoundData();
+    function getChainlinkDataFeedLatestAnswer(IAggregatorV3Interface _dataFeed) internal view returns (uint256) {
+        (, int256 answer,,,) = _dataFeed.latestRoundData();
         uint8 decimals = _dataFeed.decimals();
         return uint256(answer * 1e18) / 10 ** decimals;
     }
 
     /// @notice Gets the USD price for supported collateral.
-    function getCollateralPriceUSD(
-        address _collateral
-    ) internal view returns (uint256 collateralPriceUsd) {
+    function getCollateralPriceUSD(address _collateral) internal view returns (uint256 collateralPriceUsd) {
         if (_collateral == address(0) || _collateral == WETH) {
-            collateralPriceUsd = getChainlinkDataFeedLatestAnswer(
-                ETHUSDDataFeed
-            );
+            collateralPriceUsd = getChainlinkDataFeedLatestAnswer(ETHUSDDataFeed);
         } else if (_collateral == WBTC) {
-            collateralPriceUsd = getChainlinkDataFeedLatestAnswer(
-                BTCUSDDataFeed
-            );
+            collateralPriceUsd = getChainlinkDataFeedLatestAnswer(BTCUSDDataFeed);
         } else {
             revert DSCEngine__InvalidCollateral(_collateral);
         }
@@ -469,21 +359,12 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
     }
 
     function _requireValidCollateral(address _collateral) internal view {
-        if (
-            _collateral != WETH &&
-            _collateral != WBTC &&
-            _collateral != address(0)
-        ) {
+        if (_collateral != WETH && _collateral != WBTC && _collateral != address(0)) {
             revert DSCEngine__InvalidCollateral(_collateral);
         }
     }
 
-    function _updateCollateralBalance(
-        address _user,
-        address _collateral,
-        uint256 _amount,
-        bool _increase
-    ) internal {
+    function _updateCollateralBalance(address _user, address _collateral, uint256 _amount, bool _increase) internal {
         UserCollateral storage userCollateral = s_userCollateral[_user];
 
         if (_collateral == WETH) {
@@ -521,13 +402,9 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
         }
     }
 
-    function _transferCollateral(
-        address _to,
-        address _collateral,
-        uint256 _amount
-    ) internal {
+    function _transferCollateral(address _to, address _collateral, uint256 _amount) internal {
         if (_collateral == address(0)) {
-            (bool success, ) = _to.call{value: _amount}("");
+            (bool success,) = _to.call{value: _amount}("");
             if (!success) {
                 revert DSCEngine__TransferFailed();
             }
@@ -536,11 +413,7 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
         }
     }
 
-    function _burnDsc(
-        address _payer,
-        address _debtOwner,
-        uint256 _amount
-    ) internal {
+    function _burnDsc(address _payer, address _debtOwner, uint256 _amount) internal {
         uint256 payerBalance = i_dsc.balanceOf(_payer);
         if (payerBalance < _amount) {
             revert DSCEngine__InsufficientBalance(payerBalance, _amount);
@@ -556,18 +429,14 @@ contract DSCEngine is IDSCEngine, ReentrancyGuard {
     }
 
     /// @notice Returns the decimals for a collateral token or 18 for native ETH.
-    function _getCollateralDecimals(
-        address _collateral
-    ) internal view returns (uint8) {
+    function _getCollateralDecimals(address _collateral) internal view returns (uint8) {
         if (_collateral == address(0)) {
             return 18;
         }
         return IERC20Metadata(_collateral).decimals();
     }
 
-    function getCollateralForUser(
-        address _user
-    ) public view returns (UserCollateral memory userCollateral) {
+    function getCollateralForUser(address _user) public view returns (UserCollateral memory userCollateral) {
         // mapping(address user => UserCollateral) private s_userCollateral;
         userCollateral = s_userCollateral[_user];
     }

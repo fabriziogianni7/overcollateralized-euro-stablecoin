@@ -9,11 +9,7 @@ abstract contract TestUtils {
     uint256 internal constant PRECISION = 1e18;
     uint256 internal constant HEALTH_THRESHOLD = 150;
 
-    function _collateralFromSelector(
-        uint8 selector,
-        address weth,
-        address wbtc
-    ) internal pure returns (address) {
+    function _collateralFromSelector(uint8 selector, address weth, address wbtc) internal pure returns (address) {
         uint8 index = selector % 3;
         if (index == 0) {
             return weth;
@@ -26,24 +22,19 @@ abstract contract TestUtils {
 
     function _latestAnswer(address feed) internal view returns (uint256) {
         IAggregatorV3Interface aggregator = IAggregatorV3Interface(feed);
-        (, int256 answer, , , ) = aggregator.latestRoundData();
+        (, int256 answer,,,) = aggregator.latestRoundData();
         uint8 decimals = aggregator.decimals();
         return uint256((answer * int256(PRECISION)) / int256(10 ** decimals));
     }
 
-    function _getCollateralDecimals(
-        address _collateral
-    ) internal view returns (uint8) {
+    function _getCollateralDecimals(address _collateral) internal view returns (uint8) {
         if (_collateral == address(0)) {
             return 18;
         }
         return IERC20Metadata(_collateral).decimals();
     }
 
-    function _scaleFromWad(
-        uint256 amountWad,
-        uint8 decimals
-    ) internal pure returns (uint256) {
+    function _scaleFromWad(uint256 amountWad, uint8 decimals) internal pure returns (uint256) {
         if (decimals == 18) {
             return amountWad;
         }

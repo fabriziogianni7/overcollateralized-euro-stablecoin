@@ -6,17 +6,11 @@ import {Test} from "forge-std/Test.sol";
 import {DSCEngineMath} from "../src/libraries/DSCEngineMath.sol";
 
 contract DSCEngineMathHarness {
-    function scaleToWad(
-        uint256 amount,
-        uint8 decimals
-    ) external pure returns (uint256) {
+    function scaleToWad(uint256 amount, uint8 decimals) external pure returns (uint256) {
         return DSCEngineMath.scaleToWad(amount, decimals);
     }
 
-    function scaleFromWad(
-        uint256 amountWad,
-        uint8 decimals
-    ) external pure returns (uint256) {
+    function scaleFromWad(uint256 amountWad, uint8 decimals) external pure returns (uint256) {
         return DSCEngineMath.scaleFromWad(amountWad, decimals);
     }
 
@@ -28,15 +22,9 @@ contract DSCEngineMathHarness {
         uint256 precision,
         uint256 healthThreshold
     ) external pure returns (uint256) {
-        return
-            DSCEngineMath.computeDscAmountFromCollateral(
-                amountCollateral,
-                eurPriceUsd,
-                collateralPriceUsd,
-                collateralDecimals,
-                precision,
-                healthThreshold
-            );
+        return DSCEngineMath.computeDscAmountFromCollateral(
+            amountCollateral, eurPriceUsd, collateralPriceUsd, collateralDecimals, precision, healthThreshold
+        );
     }
 
     function collateralValueEur(
@@ -46,14 +34,9 @@ contract DSCEngineMathHarness {
         uint8 collateralDecimals,
         uint256 precision
     ) external pure returns (uint256) {
-        return
-            DSCEngineMath.collateralValueEur(
-                amountCollateral,
-                collateralPriceUsd,
-                eurPriceUsd,
-                collateralDecimals,
-                precision
-            );
+        return DSCEngineMath.collateralValueEur(
+            amountCollateral, collateralPriceUsd, eurPriceUsd, collateralDecimals, precision
+        );
     }
 
     function calculateHealthFactor(
@@ -62,13 +45,7 @@ contract DSCEngineMathHarness {
         uint256 precision,
         uint256 healthThreshold
     ) external pure returns (uint256) {
-        return
-            DSCEngineMath.calculateHealthFactor(
-                collateralValueEurAmount,
-                totalDsc,
-                precision,
-                healthThreshold
-            );
+        return DSCEngineMath.calculateHealthFactor(collateralValueEurAmount, totalDsc, precision, healthThreshold);
     }
 
     function calculateCollateralOut(
@@ -79,15 +56,9 @@ contract DSCEngineMathHarness {
         uint256 precision,
         uint256 healthThreshold
     ) external pure returns (uint256) {
-        return
-            DSCEngineMath.calculateCollateralOut(
-                amountDsc,
-                eurPriceUsd,
-                collateralPriceUsd,
-                collateralDecimals,
-                precision,
-                healthThreshold
-            );
+        return DSCEngineMath.calculateCollateralOut(
+            amountDsc, eurPriceUsd, collateralPriceUsd, collateralDecimals, precision, healthThreshold
+        );
     }
 
     function calculateLiquidationCollateralOut(
@@ -99,16 +70,15 @@ contract DSCEngineMathHarness {
         uint256 liquidationBonus,
         uint256 liquidationBonusPrecision
     ) external pure returns (uint256) {
-        return
-            DSCEngineMath.calculateLiquidationCollateralOut(
-                amountDsc,
-                eurPriceUsd,
-                collateralPriceUsd,
-                collateralDecimals,
-                precision,
-                liquidationBonus,
-                liquidationBonusPrecision
-            );
+        return DSCEngineMath.calculateLiquidationCollateralOut(
+            amountDsc,
+            eurPriceUsd,
+            collateralPriceUsd,
+            collateralDecimals,
+            precision,
+            liquidationBonus,
+            liquidationBonusPrecision
+        );
     }
 }
 
@@ -136,14 +106,8 @@ contract DSCEngineMathTest is Test {
         uint256 eurPriceUsd = 1e18;
         uint256 collateralPriceUsd = 2000e18;
 
-        uint256 minted = harness.computeDscAmountFromCollateral(
-            1 ether,
-            eurPriceUsd,
-            collateralPriceUsd,
-            18,
-            precision,
-            150
-        );
+        uint256 minted =
+            harness.computeDscAmountFromCollateral(1 ether, eurPriceUsd, collateralPriceUsd, 18, precision, 150);
         uint256 expected = (collateralPriceUsd * 100) / 150;
         assertEq(minted, expected);
     }
@@ -153,13 +117,7 @@ contract DSCEngineMathTest is Test {
         uint256 eurPriceUsd = 2e18;
         uint256 collateralPriceUsd = 2000e18;
 
-        uint256 valueEur = harness.collateralValueEur(
-            1 ether,
-            collateralPriceUsd,
-            eurPriceUsd,
-            18,
-            precision
-        );
+        uint256 valueEur = harness.collateralValueEur(1 ether, collateralPriceUsd, eurPriceUsd, 18, precision);
         assertEq(valueEur, 1000e18);
     }
 
@@ -168,22 +126,11 @@ contract DSCEngineMathTest is Test {
         uint256 healthThreshold = 150;
         uint256 collateralValueEurAmount = 1000e18;
 
-        uint256 maxHealth = harness.calculateHealthFactor(
-            collateralValueEurAmount,
-            0,
-            precision,
-            healthThreshold
-        );
+        uint256 maxHealth = harness.calculateHealthFactor(collateralValueEurAmount, 0, precision, healthThreshold);
         assertEq(maxHealth, type(uint256).max);
 
-        uint256 health = harness.calculateHealthFactor(
-            collateralValueEurAmount,
-            500e18,
-            precision,
-            healthThreshold
-        );
-        assertEq(health, (collateralValueEurAmount * 100 * precision) /
-            (500e18 * healthThreshold));
+        uint256 health = harness.calculateHealthFactor(collateralValueEurAmount, 500e18, precision, healthThreshold);
+        assertEq(health, (collateralValueEurAmount * 100 * precision) / (500e18 * healthThreshold));
     }
 
     function testCalculateCollateralOut() public view {
@@ -191,20 +138,11 @@ contract DSCEngineMathTest is Test {
         uint256 eurPriceUsd = 1e18;
         uint256 collateralPriceUsd = 2000e18;
 
-        uint256 tokenOut = harness.calculateCollateralOut(
-            1e18,
-            eurPriceUsd,
-            collateralPriceUsd,
-            18,
-            precision,
-            150
-        );
+        uint256 tokenOut = harness.calculateCollateralOut(1e18, eurPriceUsd, collateralPriceUsd, 18, precision, 150);
         uint256 collateralToRedeemEur = (1e18 * 150) / 100;
-        uint256 collateralToRedeemUsd = (collateralToRedeemEur * eurPriceUsd) /
-            1e18;
+        uint256 collateralToRedeemUsd = (collateralToRedeemEur * eurPriceUsd) / 1e18;
         uint256 numerator = collateralToRedeemUsd * precision;
-        uint256 expected = (numerator + collateralPriceUsd - 1) /
-            collateralPriceUsd;
+        uint256 expected = (numerator + collateralPriceUsd - 1) / collateralPriceUsd;
         assertEq(tokenOut, expected);
     }
 
@@ -213,18 +151,10 @@ contract DSCEngineMathTest is Test {
         uint256 eurPriceUsd = 1e18;
         uint256 collateralPriceUsd = 2000e18;
 
-        uint256 tokenOut = harness.calculateLiquidationCollateralOut(
-            1e18,
-            eurPriceUsd,
-            collateralPriceUsd,
-            18,
-            precision,
-            10,
-            100
-        );
+        uint256 tokenOut =
+            harness.calculateLiquidationCollateralOut(1e18, eurPriceUsd, collateralPriceUsd, 18, precision, 10, 100);
         uint256 base = (1e18 * eurPriceUsd) / 1e18;
-        uint256 baseWad = (base * precision + collateralPriceUsd - 1) /
-            collateralPriceUsd;
+        uint256 baseWad = (base * precision + collateralPriceUsd - 1) / collateralPriceUsd;
         uint256 bonus = (baseWad * 10) / 100;
         assertEq(tokenOut, baseWad + bonus);
     }

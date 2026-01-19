@@ -7,10 +7,7 @@ pragma solidity ^0.8.18;
  */
 library DSCEngineMath {
     /// @notice Scales an amount to 18 decimals.
-    function scaleToWad(
-        uint256 amount,
-        uint8 decimals
-    ) internal pure returns (uint256) {
+    function scaleToWad(uint256 amount, uint8 decimals) internal pure returns (uint256) {
         if (decimals == 18) {
             return amount;
         }
@@ -21,10 +18,7 @@ library DSCEngineMath {
     }
 
     /// @notice Scales an amount from 18 decimals to the target decimals.
-    function scaleFromWad(
-        uint256 amountWad,
-        uint8 decimals
-    ) internal pure returns (uint256) {
+    function scaleFromWad(uint256 amountWad, uint8 decimals) internal pure returns (uint256) {
         if (decimals == 18) {
             return amountWad;
         }
@@ -43,14 +37,9 @@ library DSCEngineMath {
         uint256 precision,
         uint256 healthThreshold
     ) internal pure returns (uint256) {
-        uint256 collateralPriceEur = (collateralPriceUsd * precision) /
-            eurPriceUsd;
-        uint256 collateralAmountWad = scaleToWad(
-            amountCollateral,
-            collateralDecimals
-        );
-        uint256 collateralValueEurAmount = (collateralPriceEur *
-            collateralAmountWad) / precision;
+        uint256 collateralPriceEur = (collateralPriceUsd * precision) / eurPriceUsd;
+        uint256 collateralAmountWad = scaleToWad(amountCollateral, collateralDecimals);
+        uint256 collateralValueEurAmount = (collateralPriceEur * collateralAmountWad) / precision;
         return (collateralValueEurAmount * 100) / healthThreshold;
     }
 
@@ -62,8 +51,7 @@ library DSCEngineMath {
         uint8 collateralDecimals,
         uint256 precision
     ) internal pure returns (uint256) {
-        uint256 collateralPriceEur = (collateralPriceUsd * precision) /
-            eurPriceUsd;
+        uint256 collateralPriceEur = (collateralPriceUsd * precision) / eurPriceUsd;
         uint256 amountWad = scaleToWad(amountCollateral, collateralDecimals);
         return (collateralPriceEur * amountWad) / precision;
     }
@@ -78,9 +66,7 @@ library DSCEngineMath {
         if (totalDsc == 0) {
             return type(uint256).max;
         }
-        return
-            (collateralValueEurAmount * 100 * precision) /
-            (totalDsc * healthThreshold);
+        return (collateralValueEurAmount * 100 * precision) / (totalDsc * healthThreshold);
     }
 
     /// @notice Calculates the collateral out when redeeming DSC.
@@ -93,8 +79,7 @@ library DSCEngineMath {
         uint256 healthThreshold
     ) internal pure returns (uint256) {
         uint256 collateralToRedeemEur = (amountDsc * healthThreshold) / 100;
-        uint256 collateralToRedeemUsd = (collateralToRedeemEur * eurPriceUsd) /
-            1e18;
+        uint256 collateralToRedeemUsd = (collateralToRedeemEur * eurPriceUsd) / 1e18;
         uint256 numerator = collateralToRedeemUsd * precision;
         uint256 tokenOutWad = numerator / collateralPriceUsd;
         return scaleFromWad(tokenOutWad, collateralDecimals);
@@ -113,8 +98,7 @@ library DSCEngineMath {
         uint256 collateralToRedeemUsd = (amountDsc * eurPriceUsd) / 1e18;
         uint256 numerator = collateralToRedeemUsd * precision;
         uint256 tokenOutWad = numerator / collateralPriceUsd;
-        uint256 bonus = (tokenOutWad * liquidationBonus) /
-            liquidationBonusPrecision;
+        uint256 bonus = (tokenOutWad * liquidationBonus) / liquidationBonusPrecision;
         uint256 totalWad = tokenOutWad + bonus;
         return scaleFromWad(totalWad, collateralDecimals);
     }

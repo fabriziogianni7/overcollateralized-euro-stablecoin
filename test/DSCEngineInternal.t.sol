@@ -19,11 +19,7 @@ contract DSCEngineInternalTest is Test {
         config = new Config();
         params = config.getActiveConfig();
 
-        dsc = new DecentralizedStablecoin(
-            params.name,
-            params.symbol,
-            params.decimals
-        );
+        dsc = new DecentralizedStablecoin(params.name, params.symbol, params.decimals);
         engine = new DSCEngineHarness(
             params.ethUsdPriceFeed,
             params.btcUsdPriceFeed,
@@ -36,12 +32,7 @@ contract DSCEngineInternalTest is Test {
     }
 
     function testGetCollateralPriceUsdRevertsOnInvalidCollateral() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InvalidCollateral.selector,
-                address(123)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InvalidCollateral.selector, address(123)));
         engine.exposedGetCollateralPriceUSD(address(123));
     }
 
@@ -50,30 +41,17 @@ contract DSCEngineInternalTest is Test {
         invalid.mint(address(this), 1 ether);
         invalid.approve(address(engine), 1 ether);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InvalidCollateral.selector,
-                address(invalid)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InvalidCollateral.selector, address(invalid)));
         engine.exposedDepositCollateral(address(invalid), 1 ether);
     }
 
     function testRedeemCollateralRevertsOnInvalidCollateral() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DSCEngine.DSCEngine__InvalidCollateral.selector,
-                address(123)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__InvalidCollateral.selector, address(123)));
         engine.exposedRedeemCollateral(0, address(123), 1);
     }
 
     function testGetCollateralDecimalsHandlesEthAndToken() public view {
         assertEq(engine.exposedGetCollateralDecimals(address(0)), 18);
-        assertEq(
-            engine.exposedGetCollateralDecimals(params.weth),
-            ERC20Mock(params.weth).decimals()
-        );
+        assertEq(engine.exposedGetCollateralDecimals(params.weth), ERC20Mock(params.weth).decimals());
     }
 }

@@ -36,26 +36,14 @@ contract Config is Script {
         return getOrCreateLocalConfig();
     }
 
-    function getOrCreateLocalConfig()
-        internal
-        returns (NetworkConfig memory)
-    {
+    function getOrCreateLocalConfig() internal returns (NetworkConfig memory) {
         if (localConfig.ethUsdPriceFeed != address(0)) {
             return localConfig;
         }
 
-        MockV3Aggregator ethUsd = new MockV3Aggregator(
-            FEED_DECIMALS,
-            ETH_USD_LOCAL_PRICE
-        );
-        MockV3Aggregator btcUsd = new MockV3Aggregator(
-            FEED_DECIMALS,
-            BTC_USD_LOCAL_PRICE
-        );
-        MockV3Aggregator eurUsd = new MockV3Aggregator(
-            FEED_DECIMALS,
-            EUR_USD_LOCAL_PRICE
-        );
+        MockV3Aggregator ethUsd = new MockV3Aggregator(FEED_DECIMALS, ETH_USD_LOCAL_PRICE);
+        MockV3Aggregator btcUsd = new MockV3Aggregator(FEED_DECIMALS, BTC_USD_LOCAL_PRICE);
+        MockV3Aggregator eurUsd = new MockV3Aggregator(FEED_DECIMALS, EUR_USD_LOCAL_PRICE);
 
         ERC20Mock weth = new ERC20Mock();
         ERC20Mock wbtc = new ERC20Mock();
@@ -103,16 +91,15 @@ contract Config is Script {
     }
 
     function getMainnetConfig() internal pure returns (NetworkConfig memory) {
-        return
-            NetworkConfig({
-                ethUsdPriceFeed: 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419,
-                btcUsdPriceFeed: 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c,
-                eurUsdPriceFeed: 0xb49f677943BC038e9857d61E7d053CaA2C1734C1,
-                weth: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
-                wbtc: 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
-                name: "Decentralized Stablecoin",
-                symbol: "DSC",
-                decimals: 18
-            });
+        return NetworkConfig({
+            ethUsdPriceFeed: 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419,
+            btcUsdPriceFeed: 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c,
+            eurUsdPriceFeed: 0xb49f677943BC038e9857d61E7d053CaA2C1734C1,
+            weth: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
+            wbtc: 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
+            name: "Decentralized Stablecoin",
+            symbol: "DSC",
+            decimals: 18
+        });
     }
 }

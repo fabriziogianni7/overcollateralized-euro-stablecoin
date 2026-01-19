@@ -23,16 +23,7 @@ contract DSCEngineInvariant is StdInvariant, TestUtils {
 
     function setUp() public {
         handler = new UserInvariantHandler();
-        (
-            ethUsdPriceFeed,
-            btcUsdPriceFeed,
-            eurUsdPriceFeed,
-            weth,
-            wbtc,
-            ,
-            ,
-
-        ) = handler.params();
+        (ethUsdPriceFeed, btcUsdPriceFeed, eurUsdPriceFeed, weth, wbtc,,,) = handler.params();
 
         engine = handler.engine();
 
@@ -49,12 +40,7 @@ contract DSCEngineInvariant is StdInvariant, TestUtils {
         if (totalEthBalance > 0) {
             uint256 ethPriceUsd = _latestAnswer(ethUsdPriceFeed);
             maxMintableEth = DSCEngineMath.computeDscAmountFromCollateral(
-                totalEthBalance,
-                eurPriceUsd,
-                ethPriceUsd,
-                18,
-                PRECISION,
-                HEALTH_THRESHOLD
+                totalEthBalance, eurPriceUsd, ethPriceUsd, 18, PRECISION, HEALTH_THRESHOLD
             );
         }
 
@@ -64,12 +50,7 @@ contract DSCEngineInvariant is StdInvariant, TestUtils {
             uint256 btcPriceUsd = _latestAnswer(btcUsdPriceFeed);
             uint8 wbtcDecimals = _getCollateralDecimals(wbtc);
             maxMintableWbtc = DSCEngineMath.computeDscAmountFromCollateral(
-                wbtcBalance,
-                eurPriceUsd,
-                btcPriceUsd,
-                wbtcDecimals,
-                PRECISION,
-                HEALTH_THRESHOLD
+                wbtcBalance, eurPriceUsd, btcPriceUsd, wbtcDecimals, PRECISION, HEALTH_THRESHOLD
             );
         }
 
@@ -78,10 +59,7 @@ contract DSCEngineInvariant is StdInvariant, TestUtils {
 
         console2.log("totalDsc", totalDsc);
         console2.log("maxMintable", maxMintable);
-        console2.log(
-            "diff",
-            maxMintable >= totalDsc ? maxMintable - totalDsc : 0
-        );
+        console2.log("diff", maxMintable >= totalDsc ? maxMintable - totalDsc : 0);
 
         assert(maxMintable >= totalDsc);
     }
@@ -95,19 +73,12 @@ contract DSCEngineInvariant is StdInvariant, TestUtils {
             revert("burned exceeds minted");
         }
         uint256 expectedBalance = totalMinted - totalBurned;
-        uint256 handlerBalance = DecentralizedStablecoin(handler.dsc())
-            .balanceOf(address(handler));
+        uint256 handlerBalance = DecentralizedStablecoin(handler.dsc()).balanceOf(address(handler));
         console2.log("expectedBalance", expectedBalance);
         console2.log("handlerBalance", handlerBalance);
-        console2.log(
-            "totalSupply",
-            DecentralizedStablecoin(handler.dsc()).totalSupply()
-        );
+        console2.log("totalSupply", DecentralizedStablecoin(handler.dsc()).totalSupply());
         assert(handlerBalance == expectedBalance);
-        assert(
-            DecentralizedStablecoin(handler.dsc()).totalSupply() ==
-                expectedBalance
-        );
+        assert(DecentralizedStablecoin(handler.dsc()).totalSupply() == expectedBalance);
     }
 
     function invariant_EngineBalancesMatchHandlerTotals() public view {
@@ -117,14 +88,8 @@ contract DSCEngineInvariant is StdInvariant, TestUtils {
         console2.log("trackedWbtc", handler.totalCollateralWbtc());
         console2.log("engineEth", address(engine).balance);
         console2.log("trackedEth", handler.totalCollateralEth());
-        assert(
-            ERC20Mock(weth).balanceOf(address(engine)) ==
-                handler.totalCollateralWeth()
-        );
-        assert(
-            ERC20Mock(wbtc).balanceOf(address(engine)) ==
-                handler.totalCollateralWbtc()
-        );
+        assert(ERC20Mock(weth).balanceOf(address(engine)) == handler.totalCollateralWeth());
+        assert(ERC20Mock(wbtc).balanceOf(address(engine)) == handler.totalCollateralWbtc());
         assert(address(engine).balance == handler.totalCollateralEth());
     }
 
