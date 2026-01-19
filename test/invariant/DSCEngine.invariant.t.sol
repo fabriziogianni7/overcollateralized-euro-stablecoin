@@ -103,7 +103,7 @@ contract DSCEngineInvariant is StdInvariant, TestUtils {
         }
     }
 
-    function invariant_LiquidationImprovesHealthFactor() public view {
-        // todo implement
+    function invariant_LiquidationImprovesHealthFactor() internal {
+        //todo complete
     }
 }

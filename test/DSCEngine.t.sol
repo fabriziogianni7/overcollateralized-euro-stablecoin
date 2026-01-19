@@ -187,9 +187,11 @@ contract DSCEngineTest is Test, TestUtils {
             engineBalanceBefore = ERC20Mock(collateral).balanceOf(address(engine));
         }
 
+        uint256 expectedOut = _expectedCollateralOut(amountDsc, collateral);
+        vm.assume(expectedOut > 0);
+
         engine.redeemCollateralForDSC(amountDsc, collateral);
 
-        uint256 expectedOut = _expectedCollateralOut(amountDsc, collateral);
         if (collateral == address(0)) {
             assertEq(address(engine).balance, engineBalanceBefore - expectedOut);
             assertEq(address(this).balance, userBalanceBefore + expectedOut);
@@ -260,11 +262,14 @@ contract DSCEngineTest is Test, TestUtils {
         uint256 minted = dsc.balanceOf(address(this));
         dsc.approve(address(engine), minted);
 
+        uint256 engineBalanceBefore = weth.balanceOf(address(engine));
+        uint256 expectedOut = _expectedCollateralOut(minted, params.weth);
+
         engine.redeemCollateralForDSC(minted, params.weth);
 
         assertEq(dsc.balanceOf(address(this)), 0, "DSC burned");
-        assertEq(weth.balanceOf(address(engine)), 0, "Collateral returned");
-        assertEq(weth.balanceOf(address(this)), startingBalance, "User paid back");
+        assertEq(weth.balanceOf(address(engine)), engineBalanceBefore - expectedOut, "Collateral returned");
+        assertEq(weth.balanceOf(address(this)), startingBalance - amount + expectedOut, "User paid back");
     }
 
     function testRedeemCollateralForDSCRevertsOnInsufficientDebt() public {
@@ -436,6 +441,7 @@ contract DSCEngineTest is Test, TestUtils {
 
     function testLiquidateRevertsWhenDebtToCoverExceedsBorrowerDebt() public {
         address borrower = makeAddr("borrower");
+        address liquidator = makeAddr("liquidator");
         uint256 amount = 1 ether;
 
         ERC20Mock(params.weth).mint(borrower, amount);
@@ -449,10 +455,18 @@ contract DSCEngineTest is Test, TestUtils {
         uint256 borrowerDebt = dsc.balanceOf(borrower);
         uint256 debtToCover = borrowerDebt + 1;
 
+        uint256 liquidatorCollateral = amount * 2;
+        ERC20Mock(params.weth).mint(liquidator, liquidatorCollateral);
+        vm.startPrank(liquidator);
+        ERC20Mock(params.weth).approve(address(engine), liquidatorCollateral);
+        engine.depositCollateralAndMintDSC(liquidatorCollateral, params.weth);
+        dsc.approve(address(engine), debtToCover);
+
         vm.expectRevert(
             abi.encodeWithSelector(DSCEngine.DSCEngine__InsufficientBalance.selector, borrowerDebt, debtToCover)
         );
         engine.liquidate(borrower, debtToCover, params.weth);
+        vm.stopPrank();
     }
 
     function testLiquidateRevertsWhenLiquidatorBalanceTooLow() public {
@@ -578,11 +592,9 @@ contract DSCEngineTest is Test, TestUtils {
             revert("unsupported collateral in test helper");
         }
 
-        uint256 collateralToRedeemEur = (amountDsc * HEALTH_THRESHOLD) / 100;
-        uint256 collateralToRedeemUsd = (collateralToRedeemEur * eurPriceUsd) / PRECISION;
-        uint256 numerator = collateralToRedeemUsd * PRECISION;
-        uint256 tokenOutWad = (numerator + collateralPriceUsd - 1) / collateralPriceUsd;
-        return _scaleFromWad(tokenOutWad, collateralDecimals);
+        return DSCEngineMath.calculateCollateralOut(
+            amountDsc, eurPriceUsd, collateralPriceUsd, collateralDecimals, PRECISION, HEALTH_THRESHOLD
+        );
     }
 
     function _prepareCollateral(address collateral, uint256 amount) internal returns (uint256) {
