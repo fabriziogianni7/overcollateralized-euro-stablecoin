@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/fabriziogianni7/overcollateralized-euro-stablecoin/refs/heads/main/public/stablecoin-image.gif" alt="Stablecoin demo" width="720" />
+  <img src="https://raw.githubusercontent.com/fabriziogianni7/overcollateralized-euro-stablecoin/refs/heads/main/public/stablecoin-image.jpg" alt="Stablecoin demo" width="720" />
 </p>
 
 ## Overcollateralized EURO Stablecoin
